@@ -1,0 +1,52 @@
+#!/bin/bash
+while true
+do
+  STARY=`cat ~/.tmp/tlo.tmp`
+  NOWY=`xfconf-query -c xfce4-desktop -p /backdrop/screen0/$(xrandr|awk '/\<connected/{print "monitor"$1}')/workspace0/last-image`
+
+  if [ $STARY != $NOWY ] ;
+  then
+    KOLOR=`convert $NOWY -scale 50x50! -depth 8 +dither -colors 8 -format "%c" histogram:info: | head -1 | awk '{print $3}'`
+    sed -i "s/bg = .*/bg = $KOLOR/" ~/.config/polybar/config.ini
+    sed -i "s/BACKGROUND=.*/BACKGROUND=\"$KOLOR\"/" ~/.config/polybar/scripts/menu
+    sed -i "s/BACKGROUND_ALT=.*/BACKGROUND_ALT=\"$KOLOR\"/" ~/.config/polybar/scripts/menu
+    sed -i "s/BACKGROUND=.*/BACKGROUND=\"$KOLOR\"/" ~/.config/polybar/scripts/menu_full
+    sed -i "s/BACKGROUND_ALT=.*/BACKGROUND_ALT=\"$KOLOR\"/" ~/.config/polybar/scripts/menu_full
+    sed -i "s/BACKGROUND=.*/BACKGROUND=\"$KOLOR\"/" ~/.config/polybar/scripts/sysmenu
+    sed -i "s/BACKGROUND_ALT=.*/BACKGROUND_ALT=\"$KOLOR\"/" ~/.config/polybar/scripts/sysmenu
+    echo $NOWY > ~/.tmp/tlo.tmp
+    sh ~/.config/polybar/launch.sh
+    HEX=(${KOLOR:1:2} ${KOLOR:3:2} ${KOLOR:5:2})
+    RGB=($((16#${HEX[0]})) $((16#${HEX[1]})) $((16#${HEX[2]})))
+    POZ=0
+    POP=0
+    for i in "${RGB[@]}";
+    do
+      if [ $i -gt $POP ];
+      then
+        POZ=$(($POZ + 1))
+        POP=$i
+      fi
+    done
+    if [ $POZ -eq 1 ];
+    then
+      xfconf-query -c xfwm4 -p /general/theme -s Am7-r
+      xfconf-query -c xsettings -p /Net/IconThemeName -s Tela-circle-red
+      xfconf-query -c xsettings -p /Net/ThemeName -s Fantome
+    else
+      if [ $POZ -eq 2 ];
+      then
+      xfconf-query -c xfwm4 -p /general/theme -s Am7-g
+      xfconf-query -c xsettings -p /Net/IconThemeName -s Tela-circle-green
+      xfconf-query -c xsettings -p /Net/ThemeName -s Juno
+    else
+      xfconf-query -c xfwm4 -p /general/theme -s Am7-b
+      xfconf-query -c xsettings -p /Net/IconThemeName -s Tela-circle-blue
+      xfconf-query -c xsettings -p /Net/ThemeName -s Arc-Dark
+      fi
+    fi
+    echo $POZ
+
+  fi
+  sleep 1
+done
